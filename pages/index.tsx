@@ -91,9 +91,9 @@ const getWordWeights = (
 const processList = (words: string[], cellStates?: CellStateMap): string[] => {
   let filtered = words;
 
-  const misses: string[] = [];
-  const incorrects: string[][] = [[], [], [], [], []];
-  const corrects: string[] = ['.', '.', '.', '.', '.'];
+  const misses = new Set<string>();
+
+  const possibilities: (string | string[])[] = [[], [], [], [], []];
 
   if (cellStates) {
     const states = Object.entries(cellStates)
@@ -105,39 +105,36 @@ const processList = (words: string[], cellStates?: CellStateMap): string[] => {
 
     for (const { index, spot, letter } of states) {
       if (spot === Spot.None) {
-        misses.push(letter);
+        misses.add(letter);
       } else if (spot === Spot.Incorrect) {
-        incorrects[index].push(letter);
+        const poss = possibilities[index];
+        if (Array.isArray(poss)) poss.push(letter);
       } else if (spot === Spot.Correct) {
-        corrects[index] = letter;
+        possibilities[index] = letter;
       }
     }
 
-    const missRegExp = new RegExp(`[${misses.join('')}]`, 'i');
-    const incorrectRegExp = new RegExp(
-      incorrects
-        .map((arr) => (arr.length === 0 ? '.' : `[^${arr.join('')}]`))
-        .join(''),
+    const re = new RegExp(
+      (misses.size !== 0 ? `(?!.*[${[...misses].join('')}])` : '') +
+        possibilities
+          .flatMap((p) =>
+            typeof p === 'string' ? '' : p.map((ch) => `(?=.*${ch})`),
+          )
+          .join('') +
+        possibilities
+          .map((p) =>
+            // eslint-disable-next-line no-nested-ternary
+            typeof p === 'string'
+              ? p
+              : p.length === 0
+              ? '.'
+              : `[^${p.join('')}]`,
+          )
+          .join(''),
       'i',
     );
-    const includesRegExp = new RegExp(
-      `${
-        incorrects
-          .flat()
-          .map((ch) => `(?=.*${ch})`)
-          .join('') || '\\w'
-      }`,
-      'i',
-    );
-    const correctRegExp = new RegExp(corrects.join(''), 'i');
 
-    filtered = words.filter(
-      (w) =>
-        correctRegExp.test(w) &&
-        includesRegExp.test(w) &&
-        !missRegExp.test(w) &&
-        incorrectRegExp.test(w),
-    );
+    filtered = words.filter((w) => re.test(w));
   }
 
   const freqCounts = getWordWeights(filtered);
