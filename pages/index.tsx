@@ -1,11 +1,12 @@
+import classNames from 'classnames';
 import type { NextPage } from 'next';
 import { useMemo, useState } from 'react';
 import { SOLUTIONS, NON_SOLUTIONS } from '../lib/words';
 
 const enum Spot {
-  None,
-  Incorrect,
-  Correct,
+  None = 'None',
+  Incorrect = 'Incorrect',
+  Correct = 'Correct',
 }
 
 interface CellState {
@@ -25,50 +26,44 @@ interface CellProps {
   setLetter: (newLetter: string) => void;
 }
 
-function Cell({ state, setLetter, setSpot }: CellProps): JSX.Element {
-  let bgColor = 'bg-gray-600/75';
+const COLOR_MAP = {
+  [Spot.None]: 'bg-gray-600',
+  [Spot.Incorrect]: 'bg-yellow-600',
+  [Spot.Correct]: 'bg-green-700',
+} as const;
 
-  if (state.spot === Spot.Incorrect) {
-    bgColor = 'bg-yellow-600/75';
-  } else if (state.spot === Spot.Correct) {
-    bgColor = 'bg-green-700/75';
-  }
-
-  return (
-    <div className="h-full w-full flex text-white">
-      <input
-        type="text"
-        className={`outline-none w-full h-full text-center ${bgColor} font-bold text-3xl`}
-        value={state.letter}
-        onChange={(e) => {
-          if (e.target.value === '' || /^[a-z]$/i.test(e.target.value)) {
-            setLetter(e.target.value.toUpperCase());
-          }
-        }}
-      />
-      <div className="flex flex-col w-1/3 divide-y divide-black">
-        {(
-          [
-            ['bg-gray-600/75', Spot.None],
-            ['bg-yellow-600/75', Spot.Incorrect],
-            ['bg-green-700/75', Spot.Correct],
-          ] as const
-        ).map(([bg, spot]) => (
-          <button
-            key={bg}
-            type="button"
-            className={`${bg} h-1/3 ${
-              state.spot === spot ? '' : 'border-l-[1px] border-black'
-            }`}
-            onClick={() => setSpot(spot)}
-          >
-            {' '}
-          </button>
-        ))}
-      </div>
+const Cell = ({ state, setLetter, setSpot }: CellProps): JSX.Element => (
+  <div className="h-full w-full flex flex-col text-white group">
+    <input
+      type="text"
+      className={classNames(
+        COLOR_MAP[state.spot],
+        'outline-none w-full h-full text-center font-bold text-3xl bg-opacity-75 group-hover:bg-opacity-100',
+      )}
+      value={state.letter}
+      onChange={(e) => {
+        if (e.target.value === '' || /^[a-z]$/i.test(e.target.value)) {
+          setLetter(e.target.value.toUpperCase());
+        }
+      }}
+    />
+    <div className="flex h-1/3 w-full divide-x divide-black items-center group">
+      {[Spot.None, Spot.Incorrect, Spot.Correct].map((spot) => (
+        <button
+          aria-label={spot}
+          key={spot}
+          type="button"
+          className={classNames(
+            COLOR_MAP[spot],
+            'h-full w-1/3 border-t-[1px] border-black bg-opacity-75 hover:bg-opacity-100',
+            { 'border-t-0 group-hover:!bg-opacity-100': state.spot === spot },
+          )}
+          onClick={() => setSpot(spot)}
+        />
+      ))}
     </div>
-  );
-}
+  </div>
+);
 
 type WeightCount = { [letter: string]: number };
 
@@ -199,7 +194,7 @@ const Home: NextPage = () => {
   );
 
   return (
-    <div className="h-screen flex items-center justify-center">
+    <div className="h-full flex items-center justify-center my-5">
       <div className="space-y-10">
         <h1 className="text-3xl w-full text-center">Wordle Helper</h1>
         <div className="space-y-2">
@@ -237,17 +232,10 @@ const Home: NextPage = () => {
               <ol>
                 {[...list.slice(0, 10), ...' '.repeat(10)]
                   .slice(0, 10)
-                  .filter(Boolean)
+                  .filter((w) => Boolean(w.trim()))
                   .map((w, i) => (
-                    // eslint-disable-next-line react/no-array-index-key
-                    <li key={`${w}-${i}`}>
-                      {w === ' ' ? (
-                        <>&nbsp;</>
-                      ) : (
-                        <>
-                          {i + 1}. {w}
-                        </>
-                      )}
+                    <li key={w}>
+                      {i + 1}. {w}
                     </li>
                   ))}
               </ol>
