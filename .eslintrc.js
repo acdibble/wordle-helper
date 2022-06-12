@@ -3,7 +3,7 @@ module.exports = {
     browser: true,
     es2021: true,
   },
-  extends: ['next/core-web-vitals', 'airbnb', 'airbnb-typescript', 'prettier'],
+  extends: ['airbnb-base', 'airbnb-typescript', 'prettier'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: {
@@ -48,8 +48,6 @@ module.exports = {
           },
         ],
         'no-restricted-syntax': 'off',
-        'react/function-component-definition': 'off',
-        'react/react-in-jsx-scope': 'off',
         'react/jsx-props-no-spreading': 'off',
       },
       parserOptions: {
